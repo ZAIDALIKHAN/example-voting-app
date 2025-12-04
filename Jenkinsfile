@@ -10,7 +10,7 @@ pipeline {
         AWS_ACCOUNT_ID  = "502487623078"
         AWS_REGION      = "us-east-1"
         ECR_REGISTRY    = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo"
-        IMAGE           = "${ECR_REGISTRY}/:latest"
+        IMAGE           = "${ECR_REGISTRY}:latest"
     }
 
     stages {
