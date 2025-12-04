@@ -2,24 +2,26 @@ pipeline {
     agent any
 
     triggers {
-        // GitHub webhook will trigger instantly
+        // Webhook-based triggering
         githubPush()
     }
 
     environment {
-        APP_NAME = "vote"
-        ECR_REGISTRY = "YOUR_AWS_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com"
-        IMAGE = "${ECR_REGISTRY}/${APP_NAME}:latest"
+        APP_NAME        = "vote"
+        AWS_ACCOUNT_ID  = "YOUR_AWS_ACCOUNT_ID"
+        AWS_REGION      = "YOUR_REGION"
+        ECR_REGISTRY    = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        IMAGE           = "${ECR_REGISTRY}/${APP_NAME}:latest"
     }
 
     stages {
 
-        stage('Changes Check') {
+        stage('Run Only If vote/ Changed') {
             when {
                 changeset "vote/**"
             }
             steps {
-                echo "Detected changes in vote/ — proceeding with pipeline."
+                echo "Detected changes in vote/ folder — pipeline will continue."
             }
         }
 
@@ -37,28 +39,36 @@ pipeline {
             }
         }
 
-        stage('Login to ECR & Push') {
+        stage('Login to ECR') {
             when {
                 changeset "vote/**"
             }
             steps {
                 script {
                     sh """
-                        aws ecr get-login-password --region YOUR_REGION \
+                        aws ecr get-login-password --region ${AWS_REGION} \
                             | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-
-                        docker push ${IMAGE}
                     """
                 }
             }
         }
 
+        stage('Push Image to ECR') {
+            when {
+                changeset "vote/**"
+            }
+            steps {
+                sh "docker push ${IMAGE}"
+            }
+        }
 
+        // OPTIONAL — remove if you don’t want auto-deploy
+        
     }
 
     post {
         always {
-            echo "Pipeline execution completed."
+            echo "Pipeline completed."
         }
     }
 }
