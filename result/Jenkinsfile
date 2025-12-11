@@ -2,67 +2,59 @@ pipeline {
     agent any
 
     triggers {
-        // Webhook-based triggering
         githubPush()
     }
 
     environment {
-        AWS_ACCOUNT_ID  = "992382782342"
+        AWS_ACCOUNT_ID  = "085013191936"
         AWS_REGION      = "us-east-1"
-        ECR_REGISTRY    = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo2"
+        ECR_REGISTRY    = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo"
         IMAGE           = "${ECR_REGISTRY}:latest"
     }
 
     stages {
 
-        stage('Run Only If result/ Changed') {
+        stage('Validate Changes') {
             when {
-                changeset "result/**"
+                not { changeset "**/result/**" }
             }
             steps {
-                echo "Detected changes in result/ folder — pipeline will continue."
+                error("No changes detected in worker/ — stopping pipeline!")
             }
         }
 
         stage('Build Docker Image') {
             when {
-                changeset "result/**"
+                changeset "**/result/**"
             }
             steps {
-                script {
-                    sh """
-                        cd result
-                        docker build -t ${IMAGE} .
-                    """
-                }
+                sh """
+                    cd worker
+                    docker build -t ${IMAGE} .
+                """
             }
         }
 
         stage('Login to ECR') {
             when {
-                changeset "result/**"
+                changeset "**/result/**"
             }
             steps {
-                script {
-                    sh """
-                        aws ecr get-login-password --region ${AWS_REGION} \
-                            | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                    """
-                }
+                sh """
+                    aws ecr get-login-password --region ${AWS_REGION} \
+                    | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                """
             }
         }
 
         stage('Push Image to ECR') {
             when {
-                changeset "result/**"
+                changeset "**/result/**"
             }
             steps {
                 sh "docker push ${IMAGE}"
             }
         }
-
-        // OPTIONAL — remove if you don’t want auto-deploy
-        
     }
 
     post {
