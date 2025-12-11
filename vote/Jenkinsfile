@@ -8,7 +8,7 @@ pipeline {
     environment {
         AWS_ACCOUNT_ID  = "085013191936"
         AWS_REGION      = "us-east-1"
-        ECR_REGISTRY    = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo3"
+        ECR_REGISTRY    = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo2"
         IMAGE           = "${ECR_REGISTRY}:latest"
     }
 
