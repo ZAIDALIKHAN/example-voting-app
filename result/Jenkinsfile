@@ -19,7 +19,7 @@ pipeline {
                 not { changeset "**/result/**" }
             }
             steps {
-                error("No changes detected in worker/ — stopping pipeline!")
+                error("No changes detected in result/ — stopping pipeline!")
             }
         }
 
