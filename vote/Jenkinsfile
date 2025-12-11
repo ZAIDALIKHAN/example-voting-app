@@ -19,6 +19,7 @@ pipeline {
             steps {
                 sh """
                     echo "Building image for ${SERVICE}"
+                    cd vote
                     docker build -t ${IMAGE} .
                 """
             }
