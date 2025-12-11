@@ -17,7 +17,7 @@ pipeline {
 
         stage('Run Only If worker/ Changed') {
             when {
-                changeset "worker/**"
+                changeset "**"
             }
             steps {
                 echo "Detected changes in worker/ folder — pipeline will continue."
