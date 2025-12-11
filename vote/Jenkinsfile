@@ -1,56 +1,39 @@
 pipeline {
     agent any
 
+    environment {
+        SERVICE       = "vote"
+        AWS_ACCOUNT_ID = "085013191936"
+        AWS_REGION     = "us-east-1"
+        ECR_REPO       = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${SERVICE}"
+        IMAGE          = "${ECR_REPO}:${BRANCH_NAME}"
+    }
+
     triggers {
         githubPush()
     }
 
-    environment {
-        AWS_ACCOUNT_ID  = "085013191936"
-        AWS_REGION      = "us-east-1"
-        ECR_REGISTRY    = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo2"
-        IMAGE           = "${ECR_REGISTRY}:latest"
-    }
-
     stages {
 
-        stage('Validate Changes') {
-            when {
-                not { changeset "**/vote/**" }
-            }
-            steps {
-                error("No changes detected in worker/ — stopping pipeline!")
-            }
-        }
-
         stage('Build Docker Image') {
-            when {
-                changeset "**/vote/**"
-            }
             steps {
                 sh """
-                    cd worker
+                    echo "Building image for ${SERVICE}"
                     docker build -t ${IMAGE} .
                 """
             }
         }
 
         stage('Login to ECR') {
-            when {
-                changeset "**/vote/**"
-            }
             steps {
                 sh """
                     aws ecr get-login-password --region ${AWS_REGION} \
-                    | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    | docker login --username AWS --password-stdin ${ECR_REPO}
                 """
             }
         }
 
-        stage('Push Image to ECR') {
-            when {
-                changeset "**/vote/**"
-            }
+        stage('Push to ECR') {
             steps {
                 sh "docker push ${IMAGE}"
             }
@@ -58,8 +41,6 @@ pipeline {
     }
 
     post {
-        always {
-            echo "Pipeline completed."
-        }
+        always { echo "Pipeline completed for ${SERVICE}" }
     }
 }
