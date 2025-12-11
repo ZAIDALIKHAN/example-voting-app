@@ -17,7 +17,7 @@ pipeline {
 
         stage('Run Only If worker/ Changed') {
             when {
-                changeset "**"
+                changeset "worker/**"
             }
             steps {
                 echo "Detected changes in worker/ folder — pipeline will continue."
@@ -26,7 +26,7 @@ pipeline {
 
         stage('Build Docker Image') {
             when {
-                changeset "**"
+                changeset "worker/**"
             }
             steps {
                 script {
@@ -40,7 +40,7 @@ pipeline {
 
         stage('Login to ECR') {
             when {
-                changeset "**"
+                changeset "worker/**"
             }
             steps {
                 script {
@@ -54,7 +54,7 @@ pipeline {
 
         stage('Push Image to ECR') {
             when {
-                changeset "**"
+                changeset "worker/**"
             }
             steps {
                 sh "docker push ${IMAGE}"
