@@ -1,1 +1,73 @@
+pipeline {
+    agent any
 
+    triggers {
+        // Webhook-based triggering
+        githubPush()
+    }
+
+    environment {
+        AWS_ACCOUNT_ID  = "992382782342"
+        AWS_REGION      = "us-east-1"
+        ECR_REGISTRY    = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo3"
+        IMAGE           = "${ECR_REGISTRY}:latest"
+    }
+
+    stages {
+
+        stage('Run Only If worker/ Changed') {
+            when {
+                changeset "**"
+            }
+            steps {
+                echo "Detected changes in worker/ folder — pipeline will continue."
+            }
+        }
+
+        stage('Build Docker Image') {
+            when {
+                changeset "**"
+            }
+            steps {
+                script {
+                    sh """
+                        cd worker
+                        docker build -t ${IMAGE} .
+                    """
+                }
+            }
+        }
+
+        stage('Login to ECR') {
+            when {
+                changeset "**"
+            }
+            steps {
+                script {
+                    sh """
+                        aws ecr get-login-password --region ${AWS_REGION} \
+                            | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    """
+                }
+            }
+        }
+
+        stage('Push Image to ECR') {
+            when {
+                changeset "**"
+            }
+            steps {
+                sh "docker push ${IMAGE}"
+            }
+        }
+
+        // OPTIONAL — remove if you don’t want auto-deploy
+        
+    }
+
+    post {
+        always {
+            echo "Pipeline completed."
+        }
+    }
+}
