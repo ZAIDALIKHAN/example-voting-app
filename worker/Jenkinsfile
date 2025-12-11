@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     triggers {
-        // Webhook-based triggering
         githubPush()
     }
 
@@ -15,54 +14,47 @@ pipeline {
 
     stages {
 
-        stage('Run Only If worker/ Changed') {
+        stage('Validate Changes') {
             when {
-                changeset "worker"
+                not { changeset "**/worker/**" }
             }
             steps {
-                echo "Detected changes in worker/ folder — pipeline will continue."
+                error("No changes detected in worker/ — stopping pipeline!")
             }
         }
 
         stage('Build Docker Image') {
             when {
-                changeset "worker"
+                changeset "**/worker/**"
             }
             steps {
-                script {
-                    sh """
-                        cd worker
-                        docker build -t ${IMAGE} .
-                    """
-                }
+                sh """
+                    cd worker
+                    docker build -t ${IMAGE} .
+                """
             }
         }
 
         stage('Login to ECR') {
             when {
-                changeset "worker"
+                changeset "**/worker/**"
             }
             steps {
-                script {
-                    sh """
-                        aws ecr get-login-password --region ${AWS_REGION} \
-                            | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                    """
-                }
+                sh """
+                    aws ecr get-login-password --region ${AWS_REGION} \
+                    | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                """
             }
         }
 
         stage('Push Image to ECR') {
             when {
-                changeset "worker"
+                changeset "**/worker/**"
             }
             steps {
                 sh "docker push ${IMAGE}"
             }
         }
-
-        // OPTIONAL — remove if you don’t want auto-deploy
-        
     }
 
     post {
