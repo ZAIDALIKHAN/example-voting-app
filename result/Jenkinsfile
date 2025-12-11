@@ -15,7 +15,7 @@ pipeline {
 
     stages {
 
-        stage('Run Only If vote/ Changed') {
+        stage('Run Only If result/ Changed') {
             when {
                 changeset "result/**"
             }
